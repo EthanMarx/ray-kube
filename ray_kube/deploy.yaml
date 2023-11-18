@@ -158,6 +158,9 @@ spec:
           requests:
             cpu: "500m"
             memory: "1G"
+
+# simple load balancer to publicly expose ray head node
+# to ray job submission client at port 8625
 ---
 apiVersion: v1
 kind: Service
