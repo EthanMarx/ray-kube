@@ -1,11 +1,9 @@
-import kr8s
 from kr8s.objects import Deployment, Service
 
 from ray_kube.templates import cluster_ip, head, load_balancer, worker
 
 
 class KubernetesRayCluster:
-    api = kr8s.api(kubeconfig="~/.kube/config")
     cluster_ip = Service(cluster_ip)
     head = Deployment(head)
     worker = Deployment(worker)
