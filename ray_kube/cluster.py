@@ -34,11 +34,9 @@ class KubernetesRayCluster:
         self, 
         num_workers: int, 
         image: str,
-        namespace: str = "default",
     ):
         self.num_workers = num_workers
         self.image = image
-        self.namespace = namespace
         self.api = kr8s.api(kubeconfig="~/.kube/config")
         self.resources = self.load_resources()
         self.build()

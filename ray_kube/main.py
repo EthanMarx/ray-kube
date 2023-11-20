@@ -1,39 +1,43 @@
-from ray.job_submission import JobSubmissionClient, JobStatus
-import utils as ray_kube_utils
 from cluster import KubernetesRayCluster
+import ray
 
-
+# TODO: currently a mismatch of python versions
+# between ray deployed on kubernetes and ray locally
+# will cause issues. Should we call ray.init() and 
+# tuner.fit() inside the container as well?
 def main(
-    entrypoint: str,
+    tuner: ray.tune.Tuner,
     image: str,
-    namespace: str = "bbhnet",
-    num_workers: int = 2,
+    num_workers: int = 2
 ):
     """
-    entrypoint: path to python file to run
+    Deploy a ray cluster via kubernetes, and execute a 
+    ray.tune hyperparameter search via ray.tune.Tuner on it.
+
+    tuner: 
+        A pre configured ray.tune.Tuner object,
+        ready for .fit() to be called.
+    image:
+        The docker image to use for ray head and worker nodes.
+        Must have ray installed.
+    num_workers:
+        The number of ray workers to use in the cluster.
     """
 
     # create a kubernetes ray cluster
     cluster = KubernetesRayCluster(
         image=image,
         num_workers=num_workers,
-        namespace=namespace,
     )
-
 
     with cluster.create() as cluster:
         # find external ip of load balancer service
         # and connect a ray job submission client to it
         ip = cluster.get_load_balancer_ip()
-        ray_client = JobSubmissionClient(f"http://{ip}:8265")
+        ray.init(address=f"{ip}:10001")
+        results = tuner.fit()
 
-        # entrypoint will be call to tune.Tuner.fit()
-        job_id = ray_client.submit_job(
-            entrypoint=entrypoint,
-        )
-
-        ray_kube_utils.wait_until_status(ray_client, job_id)
-        logs = ray_client.get_job_logs(job_id)
+    return results
 
 if __name__ == "__main__":
     main()
