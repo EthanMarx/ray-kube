@@ -16,12 +16,15 @@ class KubernetesRayCluster:
         self, 
         num_workers: int, 
         image: str,
+        gpus_per_worker: int
     ):
         # set image of head node and worker nodes,
-        # set number of replicas of workers
+        # set number of replicas of workers,
+        # set number of gpus per worker
         self.head["spec"]["template"]["spec"]["containers"][0]["image"] = image
         self.worker["spec"]["template"]["spec"]["containers"][0]["image"] = image
         self.worker["spec"]["replicas"] = num_workers
+        self.worker["spec"]["template"]["spec"]["containers"][0]["resources"]["limits"]["nvidia.com/gpu"] = gpus_per_worker
         self.image = image
         self.num_workers = num_workers
     
