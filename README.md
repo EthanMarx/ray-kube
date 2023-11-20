@@ -1,5 +1,5 @@
 # ray-kube
-Python contextmanager for deploying publicly exposed, static Ray clusters with Kubernetes. 
+Python `contextmanager` for deploying publicly exposed, static Ray clusters with Kubernetes. 
 See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from ray for the inspiration
 
 # Quickstart
