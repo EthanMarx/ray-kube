@@ -1,4 +1,4 @@
-from cluster import KubernetesRayCluster
+from ray_kube.deploy import KubernetesRayCluster
 import ray
 
 # TODO: currently a mismatch of python versions
@@ -30,7 +30,7 @@ def main(
         num_workers=num_workers,
     )
 
-    with cluster.create() as cluster:
+    with cluster as cluster:
         # find external ip of load balancer service
         # and connect a ray job submission client to it
         ip = cluster.get_load_balancer_ip()

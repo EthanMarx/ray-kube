@@ -1,78 +1,52 @@
-from pathlib import Path
-import yaml
-from kubernetes import utils, config, client
-from kubernetes.client.rest import ApiException
-from typing import Optional
-from contextlib import contextmanager
-from kr8s.objects import Deployment, Service
-import kr8s
 from dataclasses import dataclass
-from httpx import HTTPStatusError
+from typing import TYPE_CHECKING
+from ray_kube.templates import head, worker, cluster_ip, load_balancer
+import kr8s
+from kr8s.objects import Deployment, Service
 
-BASE_DEPLOYMENT = Path(__file__).parent / "deploy.yaml" 
-
-class Resource:
-    def __new__(self, config, api):
-        if config["kind"] == "Deployment":
-            cls = Deployment
-        elif config["kind"] == "Service":
-            cls = Service
-        return cls(config, api=api)
-
-@dataclass
-class RayCluster:
-    cluster_ip: Service
-    head: Deployment
-    worker: Deployment
-    load_balancer: Service
-
-    def __iter__(self):
-        return iter([self.cluster_ip, self.head, self.worker, self.load_balancer])
 
 class KubernetesRayCluster:
+    api = kr8s.api(kubeconfig="~/.kube/config")
+    cluster_ip = Service(cluster_ip)
+    head = Deployment(head)
+    worker = Deployment(worker)
+    load_balancer = Service(load_balancer)
+
     def __init__(
         self, 
         num_workers: int, 
         image: str,
     ):
-        self.num_workers = num_workers
-        self.image = image
-        self.api = kr8s.api(kubeconfig="~/.kube/config")
-        self.resources = self.load_resources()
-        self.build()
-
-    def load_resources(self):
-        resources = []
-        with open(BASE_DEPLOYMENT) as f:
-            content = yaml.safe_load_all(f)
-            for doc in content:
-                x = Resource(doc, api=self.api)
-                resources.append(x)
-        return RayCluster(*resources)
-    
-    def build(self):
         # set image of head node and worker nodes,
-        # set number of replicas of workers based on request
-        self.resources.head["spec"]["template"]["spec"]["containers"][0]["image"] = self.image
-        self.resources.worker["spec"]["template"]["spec"]["containers"][0]["image"] = self.image
-        self.resources.worker["spec"]["replicas"] = self.num_workers
-       
-    def delete(self):
-        for resource in self.resources:
-            resource.delete()
-        
-    # TODO: 
-    # probably should just use __enter__ and __exit__
-    @contextmanager
-    def create(self):
-        # catch all errors
-        try:
-            for resource in self.resources:
-                resource.create()
-            yield self
-        finally:
-            self.delete()
+        # set number of replicas of workers
+        self.head["spec"]["template"]["spec"]["containers"][0]["image"] = image
+        self.worker["spec"]["template"]["spec"]["containers"][0]["image"] = image
+        self.worker["spec"]["replicas"] = num_workers
+        self.image = image
+        self.num_workers = num_workers
+    
+    def __iter__(self):
+        return iter([self.cluster_ip, self.head, self.worker, self.load_balancer])
 
+    def create(self):
+        for resource in self:
+            resource.create()
+        return self
+    
+    def delete(self):
+        for resource in self:
+            resource.delete()
+        return self
+    
     def get_load_balancer_ip(self):
-        x = Service.get(self.resources.load_balancer.name)
+        x = Service.get(self.load_balancer.name)
         return x.status.loadBalancer.ingress[0].ip
+
+    def __enter__(self):
+        return self.create()
+    
+    def __exit__(self, *args):
+        self.delete()
+        return False
+    
+    
