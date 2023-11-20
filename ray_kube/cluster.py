@@ -1,3 +1,5 @@
+from typing import Optional
+
 import kr8s
 from kr8s.objects import Deployment, Service
 
@@ -6,9 +8,13 @@ from ray_kube.templates import cluster_ip, head, load_balancer, worker
 
 class KubernetesRayCluster:
     def __init__(
-        self, image: str, num_workers: int = 2, gpus_per_worker: int = 1
+        self,
+        image: str,
+        num_workers: int = 2,
+        gpus_per_worker: int = 1,
+        api: Optional[kr8s.api] = None,
     ):
-
+        api = api or kr8s.api()
         self.cluster_ip = Service(cluster_ip, api=kr8s.api())
         self.head = Deployment(head, api=kr8s.api())
         self.worker = Deployment(worker, api=kr8s.api())
