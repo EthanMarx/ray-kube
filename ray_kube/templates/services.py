@@ -4,9 +4,7 @@ cluster_ip = {
     "kind": "Service",
     "metadata": {
         "name": "service-ray-cluster",
-        "labels": {
-            "app": "ray-cluster-head"
-        }
+        "labels": {"app": "ray-cluster-head"},
     },
     "spec": {
         "clusterIP": "None",
@@ -15,34 +13,30 @@ cluster_ip = {
                 "name": "client",
                 "protocol": "TCP",
                 "port": 10001,
-                "targetPort": 10001
+                "targetPort": 10001,
             },
             {
                 "name": "dashboard",
                 "protocol": "TCP",
                 "port": 8265,
-                "targetPort": 8265
+                "targetPort": 8265,
             },
             {
                 "name": "gcs-server",
                 "protocol": "TCP",
                 "port": 6380,
-                "targetPort": 6380
-            }
+                "targetPort": 6380,
+            },
         ],
-        "selector": {
-            "app": "ray-cluster-head"
-        }
-    }
+        "selector": {"app": "ray-cluster-head"},
+    },
 }
 
 # Load balancer to expose Ray head node
 load_balancer = {
     "apiVersion": "v1",
     "kind": "Service",
-    "metadata": {
-        "name": "ray-head-loadbalancer"
-    },
+    "metadata": {"name": "ray-head-loadbalancer"},
     "spec": {
         "type": "LoadBalancer",
         "ports": [
@@ -50,12 +44,9 @@ load_balancer = {
                 "name": "client",
                 "protocol": "TCP",
                 "port": 10001,
-                "targetPort": 10001
+                "targetPort": 10001,
             }
         ],
-        "selector": {
-            "app": "ray-cluster-head"
-        }
-    }
+        "selector": {"app": "ray-cluster-head"},
+    },
 }
-

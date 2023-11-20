@@ -8,3 +8,5 @@ ignore = W503, E203  # ignore for consistency with black
 # import errors in __init__ files
 per-file-ignores = 
     **/__init__.py:F401,F403
+    ray_kube/templates/deployments.py:E501
+    ray_kube/templates/services.py:E501
