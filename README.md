@@ -7,7 +7,7 @@ See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-r
 
 ```python
 import ray
-from ray_kube.cluster import KubernetesRayCluster
+from ray_kube import KubernetesRayCluster
 import kr8s
 
 # instantiate an api instance that is cached by kr8s
