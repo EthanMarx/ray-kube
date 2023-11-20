@@ -10,7 +10,11 @@ python = "^3.9"
 kubernetes = "^28.1.0"
 ray = {version = "^2.8.0", extras = ["default"]}
 luigi = "^3.4.0"
+kr8s = "^0.10.0"
 
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
