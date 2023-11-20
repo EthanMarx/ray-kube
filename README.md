@@ -34,4 +34,7 @@ with cluster as cluster:
         return "hello world"
 
     print(ray.get(hello_world.remote()))
+
+    # close connection to cluster
+    ray.shutdown()
 ```

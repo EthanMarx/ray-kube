@@ -1,21 +1,23 @@
+import kr8s
 from kr8s.objects import Deployment, Service
 
 from ray_kube.templates import cluster_ip, head, load_balancer, worker
 
 
 class KubernetesRayCluster:
-    cluster_ip = Service(cluster_ip)
-    head = Deployment(head)
-    worker = Deployment(worker)
-    load_balancer = Service(load_balancer)
-
     def __init__(
         self, image: str, num_workers: int = 2, gpus_per_worker: int = 1
     ):
 
+        self.cluster_ip = Service(cluster_ip, api=kr8s.api())
+        self.head = Deployment(head, api=kr8s.api())
+        self.worker = Deployment(worker, api=kr8s.api())
+        self.load_balancer = Service(load_balancer, api=kr8s.api())
+
         self.image = image
         self.num_workers = num_workers
         self.gpus_per_worker = gpus_per_worker
+
         self.set_image()
         self.set_worker()
 
