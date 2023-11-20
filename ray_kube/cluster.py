@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from ray_kube.templates import head, worker, cluster_ip, load_balancer
 import kr8s
 from kr8s.objects import Deployment, Service
