@@ -146,10 +146,21 @@ class KubernetesRayCluster:
             path:
                 Path to secret manifest.
         """
+        # create secret and add to resources
         with open(path) as f:
             secret = yaml.safe_load(f)
         secret = Secret(secret, api=self.api)
         self.resources.append(secret)
+
+        # decode secret data as environment variables
+        # in head and worker deployments
+        head = self.head["spec"]["template"]["spec"]["containers"][0]
+        worker = self.worker["spec"]["template"]["spec"]["containers"][0]
+
+        for x in [head, worker]:
+            if "envFrom" not in x:
+                x["envFrom"] = []
+            x["envFrom"].append({"secretRef": {"name": secret.name}})
 
     def create(self):
         for resource in self:
