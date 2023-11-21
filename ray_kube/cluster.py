@@ -4,7 +4,8 @@ from typing import Optional
 
 import kr8s
 import yaml
-from resources import (
+
+from .resources import (
     RayExternalService,
     RayHeadNode,
     RayInternalService,
