@@ -1,10 +1,14 @@
 import time
+from pathlib import Path
 from typing import Optional
 
 import kr8s
-from kr8s.objects import Deployment, Service
+import yaml
+from kr8s.objects import Deployment, Secret, Service
 
 from ray_kube.templates import cluster_ip, head, load_balancer, worker
+
+SECRET_TEMPLATE = Path(__file__).parent / "templates" / "secret.yaml"
 
 
 class KubernetesRayCluster:
@@ -54,11 +58,17 @@ class KubernetesRayCluster:
                 Label to append to name of all resources.
         """
 
-        api = api or kr8s.api()
-        self.cluster_ip = Service(cluster_ip, api=api)
-        self.head = Deployment(head, api=api)
-        self.worker = Deployment(worker, api=api)
-        self.load_balancer = Service(load_balancer, api=api)
+        self.api = api or kr8s.api()
+        self.cluster_ip = Service(cluster_ip, api=self.api)
+        self.head = Deployment(head, api=self.api)
+        self.worker = Deployment(worker, api=self.api)
+        self.load_balancer = Service(load_balancer, api=self.api)
+        self.resources = [
+            self.cluster_ip,
+            self.head,
+            self.worker,
+            self.load_balancer,
+        ]
 
         self.label = label
         self.image = image
@@ -128,10 +138,18 @@ class KubernetesRayCluster:
         resources["limits"]["memory"] = self.head_memory
         resources["requests"]["memory"] = self.head_memory
 
-    def __iter__(self):
-        return iter(
-            [self.cluster_ip, self.head, self.worker, self.load_balancer]
-        )
+    def add_secret(self, path: Path):
+        """
+        Add a secret to the cluster.
+
+        Args:
+            path:
+                Path to secret manifest.
+        """
+        with open(path) as f:
+            secret = yaml.safe_load(f)
+        secret = Secret(secret, api=self.api)
+        self.resources.append(secret)
 
     def create(self):
         for resource in self:
@@ -166,6 +184,13 @@ class KubernetesRayCluster:
             if self.is_ready():
                 return
 
+    def dump(self, filename: str):
+        resources = []
+        for resource in self:
+            resources.append(resource.raw)
+        with open(filename, "w") as f:
+            yaml.dump_all(resources, f)
+
     def __enter__(self, wait: bool = True):
         self.create()
         if wait:
@@ -175,3 +200,7 @@ class KubernetesRayCluster:
     def __exit__(self, *args):
         self.delete()
         return False
+
+    def __iter__(self):
+        for resource in self.resources:
+            yield resource
