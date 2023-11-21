@@ -157,13 +157,11 @@ class KubernetesRayCluster:
 
         # decode secret data as environment variables
         # in head and worker deployments
-        head = self.head["spec"]["template"]["spec"]["containers"][0]
-        worker = self.worker["spec"]["template"]["spec"]["containers"][0]
-
-        for x in [head, worker]:
-            if "envFrom" not in x:
-                x["envFrom"] = []
-            x["envFrom"].append({"secretRef": {"name": secret.name}})
+        for node in [self.head, self.worker]:
+            container = self.head["spec"]["template"]["spec"]["containers"][0]
+            if "envFrom" not in container:
+                container["envFrom"] = []
+            container["envFrom"].append({"secretRef": {"name": secret.name}})
 
     def create(self):
         for resource in self:
