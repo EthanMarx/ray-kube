@@ -158,7 +158,7 @@ class KubernetesRayCluster:
         # decode secret data as environment variables
         # in head and worker deployments
         for node in [self.head, self.worker]:
-            container = self.head["spec"]["template"]["spec"]["containers"][0]
+            container = node["spec"]["template"]["spec"]["containers"][0]
             if "envFrom" not in container:
                 container["envFrom"] = []
             container["envFrom"].append({"secretRef": {"name": secret.name}})
