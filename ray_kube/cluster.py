@@ -1,4 +1,3 @@
-import logging
 import time
 from typing import Optional
 
@@ -124,7 +123,6 @@ class KubernetesRayCluster:
                         return
 
     def __enter__(self, wait: bool = True):
-        logging.info("Launching kubernetes Ray cluster")
         self.create()
         if wait:
             self.wait()
