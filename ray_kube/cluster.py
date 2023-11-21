@@ -20,6 +20,42 @@ class KubernetesRayCluster:
         api: Optional[kr8s.api] = None,
         label: Optional[str] = None,
     ):
+        """
+        Contextmanager class for managing a Ray cluster via Kubernetes.
+
+        ```
+        cluster = KubernetesRayCluster(image="rayproject/ray:2.3.0")
+        with cluster as cluster:
+            ip = cluster.get_load_balancer_ip()
+            ray.init(address=f"ray://{ip}:10001")
+            # do stuff with ray cluster
+            ...
+        ```
+
+        Args:
+            image:
+                Docker image used for both ray head and worker nodes
+            num_workers:
+                Number of worker nodes to create
+            gpus_per_worker:
+                Number of GPUs for each worker
+            worker_cpus:
+                Number of CPUs per worker node
+            head_cpus:
+                Number of CPUs for head node
+            worker_memory:
+                Memory for each worker node.
+            head_memory:
+                Memory for head node.
+            api:
+                kr8s.api object.
+                Defaults to kr8s.api() which will pick up any cached apis.
+            label:
+                Label to append to name of all resources.
+
+
+
+        """
         api = api or kr8s.api()
         self.cluster_ip = Service(cluster_ip, api=kr8s.api())
         self.head = Deployment(head, api=kr8s.api())
