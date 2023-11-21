@@ -140,12 +140,15 @@ class KubernetesRayCluster:
 
     def add_secret(self, path: Path):
         """
-        Add a secret to the cluster.
+        Add a secret to the cluster from a pre-built manifest,
+        and decode the secret data as environment variables
+        via `envFrom` syntax in the head and worker deployments.
 
         Args:
             path:
-                Path to secret manifest.
+                Path to pre-built secret manifest.
         """
+
         # create secret and add to resources
         with open(path) as f:
             secret = yaml.safe_load(f)
@@ -186,7 +189,7 @@ class KubernetesRayCluster:
             if "head" in pod.name:
                 return pod.ready()
         else:
-            raise ValueError("No head node found.")
+            raise ValueError("No head node found")
 
     def wait(self):
         # TODO: add timeout
