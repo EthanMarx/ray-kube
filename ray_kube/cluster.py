@@ -4,8 +4,7 @@ from typing import Optional
 
 import kr8s
 import yaml
-
-from .resources import (
+from resources import (
     RayExternalService,
     RayHeadNode,
     RayInternalService,
@@ -108,12 +107,6 @@ class KubernetesRayCluster:
         with open(filename, "w") as f:
             yaml.dump_all(resources, f)
 
-    def __enter__(self, wait: bool = True):
-        self.create()
-        if wait:
-            self.wait()
-        return self
-
     def create(self):
         for resource in self:
             resource.create()
@@ -122,6 +115,12 @@ class KubernetesRayCluster:
     def delete(self):
         for resource in self:
             resource.delete()
+        return self
+
+    def __enter__(self, wait: bool = True):
+        self.create()
+        if wait:
+            self.wait()
         return self
 
     def __exit__(self, *args):
