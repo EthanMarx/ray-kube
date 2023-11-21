@@ -38,13 +38,13 @@ class KubernetesRayCluster:
             num_workers:
                 Number of worker nodes to create
             gpus_per_worker:
-                Number of GPUs for each worker
+                Number of GPUs per worker node
             worker_cpus:
                 Number of CPUs per worker node
             head_cpus:
                 Number of CPUs for head node
             worker_memory:
-                Memory for each worker node.
+                Memory for per worker node.
             head_memory:
                 Memory for head node.
             api:
