@@ -52,10 +52,8 @@ class KubernetesRayCluster:
                 Defaults to kr8s.api() which will pick up any cached apis.
             label:
                 Label to append to name of all resources.
-
-
-
         """
+
         api = api or kr8s.api()
         self.cluster_ip = Service(cluster_ip, api=kr8s.api())
         self.head = Deployment(head, api=kr8s.api())
