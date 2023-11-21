@@ -55,10 +55,10 @@ class KubernetesRayCluster:
         """
 
         api = api or kr8s.api()
-        self.cluster_ip = Service(cluster_ip, api=kr8s.api())
-        self.head = Deployment(head, api=kr8s.api())
-        self.worker = Deployment(worker, api=kr8s.api())
-        self.load_balancer = Service(load_balancer, api=kr8s.api())
+        self.cluster_ip = Service(cluster_ip, api=api)
+        self.head = Deployment(head, api=api)
+        self.worker = Deployment(worker, api=api)
+        self.load_balancer = Service(load_balancer, api=api)
 
         self.label = label
         self.image = image
@@ -147,14 +147,24 @@ class KubernetesRayCluster:
         x = Service.get(self.load_balancer.name)
         return x.status.loadBalancer.ingress[0].ip
 
+    def is_ready(self):
+        """
+        Returns True if head node is ready.
+        TODO: maybe require one worker node?
+        """
+        pods = kr8s.get("pods", namespace=self.head.namespace)
+        for pod in pods:
+            if "head" in pod.name:
+                return pod.ready()
+        else:
+            raise ValueError("No head node found.")
+
     def wait(self):
+        # TODO: add timeout
         while True:
             time.sleep(1)
-            pods = kr8s.get("pods", namespace=self.head.namespace)
-            for pod in pods:
-                if "head" in pod.name:
-                    if pod.ready():
-                        return
+            if self.is_ready():
+                return
 
     def __enter__(self, wait: bool = True):
         self.create()
