@@ -4,11 +4,13 @@ from typing import Optional
 
 import kr8s
 import yaml
-from kr8s.objects import Deployment, Secret, Service
 
-from ray_kube.templates import cluster_ip, head, load_balancer, worker
-
-SECRET_TEMPLATE = Path(__file__).parent / "templates" / "secret.yaml"
+from .resources import (
+    RayExternalService,
+    RayHeadNode,
+    RayInternalService,
+    RayWorkerNode,
+)
 
 
 class KubernetesRayCluster:
@@ -24,119 +26,43 @@ class KubernetesRayCluster:
         api: Optional[kr8s.api] = None,
         label: Optional[str] = None,
     ):
-        """
-        Contextmanager class for managing a Ray cluster via Kubernetes.
 
-        ```
-        cluster = KubernetesRayCluster(image="rayproject/ray:2.3.0")
-        with cluster as cluster:
-            ip = cluster.get_load_balancer_ip()
-            ray.init(address=f"ray://{ip}:10001")
-            # do stuff with ray cluster
-            ...
-        ```
+        api = api or kr8s.api()
+        self.head = RayHeadNode(
+            image,
+            memory=head_memory,
+            num_cpus=head_cpus,
+            num_gpus=0,
+            label=label,
+            api=api,
+        )
 
-        Args:
-            image:
-                Docker image used for both ray head and worker nodes
-            num_workers:
-                Number of worker nodes to create
-            gpus_per_worker:
-                Number of GPUs per worker node
-            worker_cpus:
-                Number of CPUs per worker node
-            head_cpus:
-                Number of CPUs for head node
-            worker_memory:
-                Memory for per worker node.
-            head_memory:
-                Memory for head node.
-            api:
-                kr8s.api object.
-                Defaults to kr8s.api() which will pick up any cached apis.
-            label:
-                Label to append to name of all resources.
-        """
+        self.worker = RayWorkerNode(
+            image,
+            num_workers=num_workers,
+            memory=worker_memory,
+            num_cpus=worker_cpus,
+            num_gpus=gpus_per_worker,
+            label=label,
+            api=api,
+        )
 
-        self.api = api or kr8s.api()
-        self.cluster_ip = Service(cluster_ip, api=self.api)
-        self.head = Deployment(head, api=self.api)
-        self.worker = Deployment(worker, api=self.api)
-        self.load_balancer = Service(load_balancer, api=self.api)
+        self.internal = RayInternalService(
+            label=label,
+            api=api,
+        )
+
+        self.external = RayExternalService(
+            label=label,
+            api=api,
+        )
+
         self.resources = [
-            self.cluster_ip,
             self.head,
             self.worker,
-            self.load_balancer,
+            self.internal,
+            self.external,
         ]
-
-        self.label = label
-        self.image = image
-        self.num_workers = num_workers
-        self.gpus_per_worker = gpus_per_worker
-
-        self.worker_cpus = worker_cpus
-        self.head_cpus = head_cpus
-
-        self.worker_memory = worker_memory
-        self.head_memory = head_memory
-
-        self.set_head()
-        self.set_worker()
-        if self.label is not None:
-            self.set_metadata()
-
-    def set_metadata(self):
-        self.cluster_ip["metadata"]["labels"]["app"] += f"-{self.label}"
-        self.cluster_ip["metadata"]["name"] += f"-{self.label}"
-
-        self.load_balancer["metadata"]["name"] += f"-{self.label}"
-        self.load_balancer["spec"]["selector"]["app"] += f"-{self.label}"
-
-        self.head["metadata"]["name"] += f"-{self.label}"
-        self.head["metadata"]["labels"]["app"] += f"-{self.label}"
-        self.head["spec"]["selector"]["matchLabels"]["app"] += f"-{self.label}"
-        self.head["spec"]["template"]["metadata"]["labels"][
-            "app"
-        ] += f"-{self.label}"
-
-        self.worker["metadata"]["name"] += f"-{self.label}"
-        self.worker["metadata"]["labels"]["app"] += f"-{self.label}"
-        self.worker["spec"]["selector"]["matchLabels"][
-            "app"
-        ] += f"-{self.label}"
-        self.worker["spec"]["template"]["metadata"]["labels"][
-            "app"
-        ] += f"-{self.label}"
-
-    def set_head(self):
-        head = self.head["spec"]["template"]["spec"]["containers"][0]
-        head["image"] = self.image
-        resources = self.head["spec"]["template"]["spec"]["containers"][0][
-            "resources"
-        ]
-        resources["limits"]["cpu"] = self.head_cpus
-        resources["requests"]["cpu"] = self.head_cpus
-        resources["limits"]["memory"] = self.head_memory
-        resources["requests"]["memory"] = self.head_memory
-
-    def set_worker(self):
-        self.worker["spec"]["replicas"] = self.num_workers
-
-        worker = self.worker["spec"]["template"]["spec"]["containers"][0]
-        worker["image"] = self.image
-
-        resources = self.worker["spec"]["template"]["spec"]["containers"][0][
-            "resources"
-        ]
-        resources["limits"]["nvidia.com/gpu"] = self.gpus_per_worker
-        resources["requests"]["nvidia.com/gpu"] = self.gpus_per_worker
-
-        resources["limits"]["cpu"] = self.worker_cpus
-        resources["requests"]["cpu"] = self.worker_cpus
-
-        resources["limits"]["memory"] = self.head_memory
-        resources["requests"]["memory"] = self.head_memory
 
     def add_secret(self, path: Path):
         """
@@ -152,49 +78,28 @@ class KubernetesRayCluster:
         # create secret and add to resources
         with open(path) as f:
             secret = yaml.safe_load(f)
-        secret = Secret(secret, api=self.api)
+        # secret = Secret(secret, api=self.api)
         self.resources.append(secret)
 
         # decode secret data as environment variables
-        # in head and worker deployments
+        # in head and worker deployments via envFrom
         for node in [self.head, self.worker]:
             container = node["spec"]["template"]["spec"]["containers"][0]
             if "envFrom" not in container:
                 container["envFrom"] = []
             container["envFrom"].append({"secretRef": {"name": secret.name}})
 
-    def create(self):
-        for resource in self:
-            resource.create()
-        return self
-
-    def delete(self):
-        for resource in self:
-            resource.delete()
-        return self
-
-    def get_load_balancer_ip(self):
-        x = Service.get(self.load_balancer.name)
-        return x.status.loadBalancer.ingress[0].ip
+    def wait(self, timeout: Optional[float] = None):
+        count = 0
+        while not self.is_ready():
+            time.sleep(1)
+            count += 1
+            if timeout is not None:
+                if count > timeout:
+                    raise TimeoutError("Cluster failed to start in time")
 
     def is_ready(self):
-        """
-        Returns True if head node is ready.
-        TODO: maybe require one worker node?
-        """
-        pods = kr8s.get("pods", namespace=self.head.namespace)
-        for pod in pods:
-            if "head" in pod.name:
-                return pod.ready()
-        else:
-            raise ValueError("No head node found")
-
-    def wait(self):
-        # TODO: add timeout
-        while True:
-            time.sleep(1)
-            if self.is_ready():
-                return
+        return self.head.is_ready()
 
     def dump(self, filename: str):
         resources = []
@@ -207,6 +112,16 @@ class KubernetesRayCluster:
         self.create()
         if wait:
             self.wait()
+        return self
+
+    def create(self):
+        for resource in self:
+            resource.create()
+        return self
+
+    def delete(self):
+        for resource in self:
+            resource.delete()
         return self
 
     def __exit__(self, *args):
