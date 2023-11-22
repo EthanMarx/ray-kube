@@ -1,5 +1,4 @@
 import time
-from pathlib import Path
 from typing import Optional
 
 import kr8s
@@ -10,6 +9,7 @@ from .resources import (
     RayHeadNode,
     RayInternalService,
     RayWorkerNode,
+    Secret,
 )
 
 
@@ -23,6 +23,7 @@ class KubernetesRayCluster:
         head_cpus: int = 2,
         worker_memory: str = "4G",
         head_memory: str = "4G",
+        min_gpu_memory: str = "15000",
         api: Optional[kr8s.api] = None,
         label: Optional[str] = None,
     ):
@@ -39,6 +40,7 @@ class KubernetesRayCluster:
 
         self.worker = RayWorkerNode(
             image,
+            min_gpu_memory=min_gpu_memory,
             num_workers=num_workers,
             memory=worker_memory,
             num_cpus=worker_cpus,
@@ -64,30 +66,22 @@ class KubernetesRayCluster:
             self.external,
         ]
 
-    def add_secret(self, path: Path):
+    def add_secret(self, name: str, env: dict):
         """
-        Add a secret to the cluster from a pre-built manifest,
-        and decode the secret data as environment variables
-        via `envFrom` syntax in the head and worker deployments.
+        Add a secret to the deployment with name `name` and
+        set it's `stringData` field to `env`.
 
-        Args:
-            path:
-                Path to pre-built secret manifest.
+        Decode the secret in head and worker nodes
+        with the `envFrom` syntax
         """
 
-        # create secret and add to resources
-        with open(path) as f:
-            secret = yaml.safe_load(f)
-        # secret = Secret(secret, api=self.api)
+        secret = Secret(name, env)
         self.resources.append(secret)
 
         # decode secret data as environment variables
         # in head and worker deployments via envFrom
-        for node in [self.head, self.worker]:
-            container = node["spec"]["template"]["spec"]["containers"][0]
-            if "envFrom" not in container:
-                container["envFrom"] = []
-            container["envFrom"].append({"secretRef": {"name": secret.name}})
+        self.head.set_env_from_secret(secret)
+        self.worker.set_env_from_secret(secret)
 
     def wait(self, timeout: Optional[float] = None):
         count = 0

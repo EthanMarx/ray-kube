@@ -18,6 +18,15 @@ spec:
         type: ray
         app: ray-cluster-worker
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.memory
+                operator: Gt
+                values:
+                - "15000"
       restartPolicy: Always
       volumes:
       - name: dshm

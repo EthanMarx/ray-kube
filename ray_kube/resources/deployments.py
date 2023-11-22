@@ -1,9 +1,12 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import kr8s
 from kr8s.objects import Deployment
 
 from ..templates import head, worker
+
+if TYPE_CHECKING:
+    from .secret import Secret
 
 
 class RayDeployment(Deployment):
@@ -17,8 +20,9 @@ class RayDeployment(Deployment):
         num_gpus: Optional[int] = 0,
         label: Optional[str] = None,
         api: Optional[kr8s.api] = None,
+        **kwargs,
     ):
-        super().__init__(self.template, api=api)
+        super().__init__(self.template, api=api, **kwargs)
         self.label = label
         self.image = image
         self._api = api
@@ -37,8 +41,12 @@ class RayDeployment(Deployment):
         self.set_resources()
         self.set_image()
 
-    def set_env():
-        pass
+    def set_env_from_secret(self, secret: "Secret"):
+        container = self["spec"]["template"]["spec"]["containers"][0]
+        ref = dict(secretRef=dict(name=secret.name))
+        if "envFrom" not in container:
+            container["envFrom"] = []
+        container["envFrom"].append(ref)
 
     def set_image(self):
         container = self["spec"]["template"]["spec"]["containers"][0]
@@ -75,19 +83,25 @@ class RayWorkerNode(RayDeployment):
     def __init__(
         self,
         *args,
+        min_gpu_memory: str = "15000",
         gpus_per_worker: Optional[int] = 1,
         num_workers: Optional[int] = 1,
         **kwargs,
     ):
         self.num_workers = num_workers
         self.gpus_per_worker = gpus_per_worker
+        self.min_gpu_memory = min_gpu_memory
         super().__init__(*args, **kwargs)
 
     def set_resources(self):
         super().set_resources()
         self["spec"]["replicas"] = self.num_workers
-        resources = self["spec"]["template"]["spec"]["containers"][0][
-            "resources"
+        spec = self["spec"]["template"]["spec"]
+        spec["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"
+        ]["nodeSelectorTerms"][0]["matchExpressions"][0]["values"] = [
+            self.min_gpu_memory
         ]
+        resources = spec["containers"][0]["resources"]
         resources["limits"]["nvidia.com/gpu"] = self.gpus_per_worker
         resources["requests"]["nvidia.com/gpu"] = self.gpus_per_worker
