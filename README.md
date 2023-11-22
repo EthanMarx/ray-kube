@@ -1,14 +1,18 @@
 # ray-kube
-Python `contextmanager` for deploying publicly exposed, static Ray clusters with Kubernetes. 
-See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from [`ray`](https://docs.ray.io/en/latest/) for the inspiration
+Python `contextmanager` for deploying publicly exposed, static Ray clusters with Kubernetes.
+
+See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from [`ray`](https://docs.ray.io/en/latest/) for the inspiration.
+
+Useful for instances where your kubernetes cluster does not support arbitrary CRD (such as [KubeRay](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)). This is the case for the [Nautilus HyperCluster](https://nationalresearchplatform.org/nautilus/).
+
 
 # Quickstart
-
-
 ```python
-import ray
-from ray_kube import KubernetesRayCluster
 import kr8s
+import ray
+
+from ray_kube import KubernetesRayCluster
+from ray_kube.utils import refresh_token
 
 # instantiate an api instance that is cached by kr8s
 api = kr8s.api(kubeconfig="~/.kube/config")
