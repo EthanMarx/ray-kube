@@ -118,6 +118,13 @@ class KubernetesRayCluster:
             self.wait()
         return self
 
+    def get_ip(self):
+        """
+        Get the ip of the load balancer
+        that forwards traffic to the head node
+        """
+        return self.external.ip()
+
     def __exit__(self, *args):
         self.delete()
         return False
