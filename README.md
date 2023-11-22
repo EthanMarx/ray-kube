@@ -3,7 +3,7 @@ Python `contextmanager` for deploying publicly exposed, static Ray clusters with
 
 See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from [`ray`](https://docs.ray.io/en/latest/) for the inspiration.
 
-Useful for instances where your kubernetes cluster does not support arbitrary CRD (such as [KubeRay](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)). This is the case for the [Nautilus HyperCluster](https://nationalresearchplatform.org/nautilus/).
+Useful for instances where your kubernetes cluster does not support arbitrary custom resource definitions (CRD's) (such as [KubeRay](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)). This is the case for the [Nautilus HyperCluster](https://nationalresearchplatform.org/nautilus/).
 
 
 # Quickstart
