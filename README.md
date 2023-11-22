@@ -25,7 +25,7 @@ with cluster as cluster:
     # find external ip address of load balancer,
     # which forwards traffic to ray head node,
     # and then connect to that node
-    ip = cluster.get_load_balancer_ip()
+    ip = cluster.get_ip()
     ray.init(address=f"ray://{ip}:10001")
     
     # send a request to the cluster!
@@ -38,3 +38,20 @@ with cluster as cluster:
     # close connection to cluster
     ray.shutdown()
 ```
+
+
+## Adding Secrets
+Adding a kubernetes Secret is as simple as 
+
+```python
+cluster = KubernetesRayCluster(
+    image="rayproject/ray:2.8.0-py39"
+)
+cluster.add_secret(name="credentials", env={"credentials" : "password"})
+
+# launch cluster ...
+```
+
+This will automatically deploy a Secret resource, 
+and will set the secret data as enviroment variables
+inside the node worker deployments
