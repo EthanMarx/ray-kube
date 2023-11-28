@@ -11,6 +11,7 @@ from .resources import (
     RayWorkerNode,
     Secret,
 )
+from .utils import authenticate
 
 
 class KubernetesRayCluster:
@@ -29,6 +30,10 @@ class KubernetesRayCluster:
     ):
 
         api = api or kr8s.api()
+        api.auth.reauthenticate = authenticate.__get__(
+            api.auth, type(api.auth)
+        )
+
         self.head = RayHeadNode(
             image,
             memory=head_memory,

@@ -1,14 +1,16 @@
 import subprocess
 
 
-def refresh_oicd_token():
+# used to monkey patch kr8s api refresh method;
+# see https://github.com/kr8s-org/kr8s/issues/214
+async def authenticate(self):
     """
-    Dummy call to kubectl to refresh the kubernetes oicd token.
-    See https://github.com/kr8s-org/kr8s/issues/125 and
-    https://github.com/kr8s-org/kr8s/issues/214
+    Replacement reauthenticate method that
+    uses kubectl to refresh the OIDC token
     """
     subprocess.run(
         ["kubectl", "cluster-info"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    await self._load_kubeconfig()
