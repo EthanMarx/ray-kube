@@ -27,6 +27,7 @@ class KubernetesRayCluster:
         min_gpu_memory: str = "15000",
         api: Optional[kr8s.api] = None,
         label: Optional[str] = None,
+        namespace: Optional[str] = None,
     ):
 
         api = api or kr8s.api()
@@ -70,6 +71,10 @@ class KubernetesRayCluster:
             self.internal,
             self.external,
         ]
+
+        if namespace is not None:
+            for resource in self:
+                resource.namespace = namespace
 
     def add_secret(self, name: str, env: dict):
         """
