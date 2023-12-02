@@ -48,6 +48,12 @@ class RayDeployment(Deployment):
             container["envFrom"] = []
         container["envFrom"].append(ref)
 
+    def set_env(self, env: dict):
+        container = self["spec"]["template"]["spec"]["containers"][0]
+        container["env"] = []
+        for key, value in env.items():
+            container["env"].append(dict(name=key, value=value))
+
     def set_image(self):
         container = self["spec"]["template"]["spec"]["containers"][0]
         container["image"] = self.image

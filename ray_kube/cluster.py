@@ -93,6 +93,13 @@ class KubernetesRayCluster:
         self.head.set_env_from_secret(secret)
         self.worker.set_env_from_secret(secret)
 
+    def set_env(self, env: dict):
+        """
+        Set the environment variables in the head and worker deployments
+        """
+        self.head.set_env(env)
+        self.worker.set_env(env)
+
     def wait(self, timeout: Optional[float] = None):
         count = 0
         while not self.is_ready():
