@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "ray-kube"
+name = "kubeml"
 version = "0.1.0"
-description = "Deploy ray clusters with kubernetes"
+description = "Deploy ray and triton server clusters with kubernetes"
 authors = ["Ethan Jacob Marx <ethan.marx@ligo.org>"]
 license = "MIT"
 
