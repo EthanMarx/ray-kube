@@ -1,104 +1,18 @@
 import time
 from typing import Optional
 
-import kr8s
 import yaml
 
-from .resources import (
-    RayExternalService,
-    RayHeadNode,
-    RayInternalService,
-    RayWorkerNode,
-    Secret,
-)
-from .utils import authenticate
 
-
-class KubernetesRayCluster:
-    def __init__(
-        self,
-        image: str,
-        num_workers: int = 2,
-        gpus_per_worker: int = 1,
-        worker_cpus: int = 2,
-        head_cpus: int = 2,
-        worker_memory: str = "4G",
-        head_memory: str = "4G",
-        min_gpu_memory: str = "15000",
-        api: Optional[kr8s.api] = None,
-        label: Optional[str] = None,
-        namespace: Optional[str] = None,
-    ):
-
-        api = api or kr8s.api()
-        api.auth.reauthenticate = authenticate.__get__(
-            api.auth, type(api.auth)
-        )
-
-        self.head = RayHeadNode(
-            image,
-            memory=head_memory,
-            num_cpus=head_cpus,
-            num_gpus=0,
-            label=label,
-            api=api,
-        )
-
-        self.worker = RayWorkerNode(
-            image,
-            min_gpu_memory=min_gpu_memory,
-            num_workers=num_workers,
-            memory=worker_memory,
-            num_cpus=worker_cpus,
-            num_gpus=gpus_per_worker,
-            label=label,
-            api=api,
-        )
-
-        self.internal = RayInternalService(
-            label=label,
-            api=api,
-        )
-
-        self.external = RayExternalService(
-            label=label,
-            api=api,
-        )
-
-        self.resources = [
-            self.head,
-            self.worker,
-            self.internal,
-            self.external,
-        ]
-
-        if namespace is not None:
-            for resource in self:
-                resource.namespace = namespace
-
+class Cluster:
     def add_secret(self, name: str, env: dict):
-        """
-        Add a secret to the deployment with name `name` and
-        set it's `stringData` field to `env`.
-
-        Decode the secret in head and worker nodes
-        with the `envFrom` syntax
-        """
-
-        secret = Secret(name, env)
-        self.resources.append(secret)
-
-        # decode secret data as environment variables
-        # in head and worker deployments via envFrom
-        self.head.set_env_from_secret(secret)
-        self.worker.set_env_from_secret(secret)
+        raise NotImplementedError
 
     def set_env(self, env: dict):
-        """
-        Set the environment variables in the head and worker deployments
-        """
-        self.head.set_env(env)
-        self.worker.set_env(env)
+        raise NotImplementedError
+
+    def is_ready(self):
+        raise NotImplementedError
 
     def wait(self, timeout: Optional[float] = None):
         count = 0
@@ -108,9 +22,6 @@ class KubernetesRayCluster:
             if timeout is not None:
                 if count > timeout:
                     raise TimeoutError("Cluster failed to start in time")
-
-    def is_ready(self):
-        return self.head.is_ready()
 
     def dump(self, filename: str):
         resources = []
@@ -140,7 +51,7 @@ class KubernetesRayCluster:
         Get the ip of the load balancer
         that forwards traffic to the head node
         """
-        return self.external.ip()
+        return self.external.ip
 
     def __exit__(self, *args):
         self.delete()

@@ -1,1 +1,2 @@
-from .cluster import KubernetesRayCluster
+from .ray import KubernetesRayCluster
+from .triton import KubernetesTritonCluster

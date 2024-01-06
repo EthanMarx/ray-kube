@@ -1,6 +1,6 @@
 from kr8s.objects import Secret as _Secret
 
-from ..templates import secret
+from .templates import secret
 
 
 class Secret:
