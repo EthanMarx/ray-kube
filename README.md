@@ -1,18 +1,17 @@
 # ray-kube
-Python `contextmanager` for deploying publicly exposed, static Ray clusters with Kubernetes.
+Python `contextmanager`s for deploying publicly exposed, static Ray clusters, and Triton Servers with Kubernetes.
 
-See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from [`ray`](https://docs.ray.io/en/latest/) for the inspiration.
+See [this](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html) example from [`ray`](https://docs.ray.io/en/latest/) for the inspiration for Ray Clusters. Useful for instances where your kubernetes cluster does not support arbitrary custom resource definitions (CRD's) (such as [KubeRay](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)). This is the case for the [Nautilus HyperCluster](https://nationalresearchplatform.org/nautilus/).
 
-Useful for instances where your kubernetes cluster does not support arbitrary custom resource definitions (CRD's) (such as [KubeRay](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)). This is the case for the [Nautilus HyperCluster](https://nationalresearchplatform.org/nautilus/).
-
+There are certainly ways to generalize and improve these tools. One of the main motivations was to expose commonly altered deployment parameters (such as quantities of resources) via an easy to use python API. If there are other parameters of the deployments you would like to be able to manipulate, we can look to add support! 
 
 # Quickstart
 ```python
 import kr8s
 import ray
 
-from ray_kube import KubernetesRayCluster
-from ray_kube.utils import refresh_token
+from kubeml import KubernetesRayCluster
+from kubeml.utils import refresh_token
 
 # instantiate an api instance that is cached by kr8s
 api = kr8s.api(kubeconfig="~/.kube/config")
