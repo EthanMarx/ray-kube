@@ -45,7 +45,7 @@ class KubernetesRayCluster(Cluster):
         self.worker = RayWorkerNode(
             image,
             min_gpu_memory=min_gpu_memory,
-            replicas=num_workers,
+            num_replicas=num_workers,
             memory=worker_memory,
             cpus_per_replica=worker_cpus,
             gpus_per_replica=gpus_per_worker,
