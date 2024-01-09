@@ -11,6 +11,7 @@ class TritonServerDeployment(Deployment):
         super().__init__(*args, **kwargs)
         self.command = command
         self.set_command()
+        self.set_args()
 
     def set_args(self):
         self["spec"]["template"]["spec"]["containers"][0][
