@@ -87,10 +87,19 @@ class Deployment(_Deployment):
         container["envFrom"].append(ref)
 
     def set_env(self, env: dict):
+        """
+        Set environment variables in the container,
+        being careful not to override anything that
+        may have already been set in the spec template
+        """
         container = self["spec"]["template"]["spec"]["containers"][0]
-        container["env"] = []
+        try:
+            current = container["env"]
+        except KeyError:
+            current = []
         for key, value in env.items():
-            container["env"].append(dict(name=key, value=value))
+            current.append(dict(name=key, value=value))
+        container["env"] = current
 
     def set_image(self):
         container = self["spec"]["template"]["spec"]["containers"][0]
