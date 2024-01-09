@@ -55,6 +55,8 @@ class KubernetesTritonCluster(Cluster):
 
         self.deployment = TritonServerDeployment(
             image,
+            command,
+            args,
             num_replicas,
             memory,
             cpus_per_replica,
@@ -62,8 +64,6 @@ class KubernetesTritonCluster(Cluster):
             min_gpu_memory,
             label,
             api,
-            command_args=args,
-            command=command,
         )
         self.external = TritonLoadBalancer(
             label=label,
