@@ -1,27 +1,13 @@
-from typing import List
-
 from ..deployment import Deployment
 from .templates import servers
 
 
 class TritonServerDeployment(Deployment):
-    def __init__(
-        self, *args, command: List[str], command_args: List[str], **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self.command = command
-        self.set_command()
-        self.set_args()
-
-    def set_args(self):
-        self["spec"]["template"]["spec"]["containers"][0][
-            "args"
-        ] = self.command_args
-
-    def set_command(self):
-        self["spec"]["template"]["spec"]["containers"][0][
-            "command"
-        ] = self.command
+    """
+    Simple subclass that defines
+    spec and metadata for triton server
+    deployment from templates
+    """
 
     @property
     def spec(self):

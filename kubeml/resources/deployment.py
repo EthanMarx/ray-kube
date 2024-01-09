@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import kr8s
 from kr8s.objects import Deployment as _Deployment
@@ -19,6 +19,8 @@ class Deployment(_Deployment):
     def __init__(
         self,
         image: str,
+        command: Optional[List[str]] = None,
+        args: Optional[List[str]] = None,
         num_replicas: int = 1,
         memory: str = "4G",
         cpus_per_replica: int = 1,
@@ -32,6 +34,8 @@ class Deployment(_Deployment):
         self.template["spec"] = self.spec
 
         super().__init__(self.template, api=api, **kwargs)
+        self.command = command
+        self.args = args
         self.label = label
         self.image = image
         self._api = api
@@ -60,6 +64,17 @@ class Deployment(_Deployment):
         self.set_resources()
         self.set_image()
         self.set_replicas()
+        self.set_command()
+
+    def set_command(self):
+        if self.args is not None:
+            self["spec"]["template"]["spec"]["containers"][0][
+                "args"
+            ] = self.args
+        if self.command is not None:
+            self["spec"]["template"]["spec"]["containers"][0][
+                "command"
+            ] = self.command
 
     def set_replicas(self):
         self["spec"]["replicas"] = self.num_replicas
