@@ -1,9 +1,9 @@
 from typing import Optional
 
 import kr8s
-from kr8s.objects import Secret
 
 from .cluster import Cluster
+from .resources.secret import Secret
 from .resources.triton import TritonLoadBalancer, TritonServerDeployment
 from .utils import authenticate
 

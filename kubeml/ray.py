@@ -8,8 +8,8 @@ from .resources.ray import (
     RayHeadNode,
     RayInternalService,
     RayWorkerNode,
-    Secret,
 )
+from .resources.secret import Secret
 from .utils import authenticate
 
 

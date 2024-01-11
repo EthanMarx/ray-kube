@@ -39,8 +39,6 @@ spec:
         env:
         - name: EXTRA_NV_PATHS
           value: /usr/local/nvidia/lib64:/usr/local/nvidia/bin
-        - name: AWS_ENDPOINT_URL
-          value: "http://rook-ceph-rgw-nautiluss3.rook"
         command:
         - export-and-launch-triton
         resources:
