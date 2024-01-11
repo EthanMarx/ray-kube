@@ -99,4 +99,6 @@ class KubernetesRayCluster(Cluster):
         self.worker.set_env(env)
 
     def is_ready(self):
-        return self.head.is_ready()
+        workers = self.worker.is_ready()
+        head = self.head.is_ready()
+        return workers & head
