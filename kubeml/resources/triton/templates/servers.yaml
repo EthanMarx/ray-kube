@@ -25,11 +25,10 @@ spec:
                 operator: Gt
                 values:
                 - "15000"
-              - key: nvidia.com/gpu.product
-                operator: In
+              - key: nvidia.com/cuda.driver.major
+                operator: Gt
                 values:
-                - NVIDIA-A10
-                - NVIDIA-A40
+                - '520'
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
